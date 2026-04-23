@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>抛物线动画曲线可视化</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #1a1a2e; color: #eee; font-family: -apple-system, sans-serif; padding: 30px; }
+  h1 { text-align: center; margin-bottom: 10px; font-size: 20px; color: #aaa; }
+  .subtitle { text-align: center; margin-bottom: 30px; font-size: 13px; color: #666; }
+  .charts { display: flex; flex-wrap: wrap; gap: 24px; justify-content: center; }
+  .chart-box {
+    background: #0f0f23;
+    border-radius: 12px;
+    padding: 20px;
+    width: 520px;
+  }
+  .chart-title {
+    font-size: 14px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  canvas { display: block; border-radius: 8px; }
+  .legend {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin: 20px 0;
+    font-size: 13px;
+    flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 5px; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 3px; }
+  .anim-area {
+    background: #0f0f23;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 24px;
+  }
+  .anim-stage {
+    position: relative;
+    width: 100%;
+    height: 200px;
+    margin-top: 10px;
+  }
+  .anim-line {
+    position: absolute;
+    left: 60px;
+    right: 60px;
+    top: 140px;
+    height: 4px;
+    background: linear-gradient(90deg, #ff6b6b, #ffd93d, #6bff6b, #6bb5ff, #c56bff);
+    border-radius: 2px;
+  }
+  .anim-line-label {
+    position: absolute;
+    left: 10px;
+    top: 134px;
+    font-size: 11px;
+    color: #555;
+  }
+  .anim-icon {
+    position: absolute;
+    bottom: 56px;
+    font-size: 28px;
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  .icon-1 { left: 80px; }
+  .icon-2 { left: 130px; }
+  .icon-3 { left: 180px; }
+  .icon-4 { left: 230px; }
+  .icon-5 { left: 280px; }
+
+  .playing .icon-1 { animation: throwArc1 0.95s 0.04s linear forwards; }
+  .playing .icon-2 { animation: throwArc2 0.95s 0.34s linear forwards; }
+  .playing .icon-3 { animation: throwArc3 0.95s 0.44s linear forwards; }
+  .playing .icon-4 { animation: throwArc4 0.95s 0.14s linear forwards; }
+  .playing .icon-5 { animation: throwArc5 0.95s 0.24s linear forwards; }
+
+  @keyframes throwArc1 {
+    0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 1; }
+    12%  { transform: translate3d(16px, -52px, 0) scale(1) rotate(5deg); opacity: 1; }
+    24%  { transform: translate3d(34px, -84px, 0) scale(1) rotate(9deg); opacity: 1; }
+    36%  { transform: translate3d(52px, -101px, 0) scale(1) rotate(13deg); opacity: 1; }
+    44%  { transform: translate3d(64px, -106px, 0) scale(1) rotate(16deg); opacity: 1; }
+    50%  { transform: translate3d(74px, -107px, 0) scale(1) rotate(18deg); opacity: 1; }
+    56%  { transform: translate3d(84px, -104px, 0) scale(1) rotate(20deg); opacity: 1; }
+    64%  { transform: translate3d(96px, -90px, 0) scale(1) rotate(23deg); opacity: 1; }
+    76%  { transform: translate3d(114px, -50px, 0) scale(1) rotate(28deg); opacity: 1; }
+    88%  { transform: translate3d(130px, -10px, 0) scale(0.55) rotate(33deg); opacity: 0.55; }
+    100% { transform: translate3d(140px, 8px, 0) scale(0) rotate(36deg); opacity: 0; }
+  }
+  @keyframes throwArc2 {
+    0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 1; }
+    12%  { transform: translate3d(15px, -60px, 0) scale(1) rotate(-4deg); opacity: 1; }
+    24%  { transform: translate3d(31px, -98px, 0) scale(1) rotate(-8deg); opacity: 1; }
+    36%  { transform: translate3d(47px, -121px, 0) scale(1) rotate(-12deg); opacity: 1; }
+    44%  { transform: translate3d(57px, -127px, 0) scale(1) rotate(-14deg); opacity: 1; }
+    50%  { transform: translate3d(67px, -128px, 0) scale(1) rotate(-16deg); opacity: 1; }
+    56%  { transform: translate3d(77px, -124px, 0) scale(1) rotate(-18deg); opacity: 1; }
+    64%  { transform: translate3d(88px, -104px, 0) scale(1) rotate(-21deg); opacity: 1; }
+    76%  { transform: translate3d(102px, -58px, 0) scale(1) rotate(-25deg); opacity: 1; }
+    88%  { transform: translate3d(115px, -12px, 0) scale(0.52) rotate(-30deg); opacity: 0.52; }
+    100% { transform: translate3d(124px, 10px, 0) scale(0) rotate(-34deg); opacity: 0; }
+  }
+  @keyframes throwArc3 {
+    0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 1; }
+    12%  { transform: translate3d(17px, -56px, 0) scale(1) rotate(-4deg); opacity: 1; }
+    24%  { transform: translate3d(36px, -88px, 0) scale(1) rotate(-8deg); opacity: 1; }
+    36%  { transform: translate3d(55px, -107px, 0) scale(1) rotate(-12deg); opacity: 1; }
+    44%  { transform: translate3d(68px, -112px, 0) scale(1) rotate(-15deg); opacity: 1; }
+    50%  { transform: translate3d(80px, -113px, 0) scale(1) rotate(-17deg); opacity: 1; }
+    56%  { transform: translate3d(92px, -108px, 0) scale(1) rotate(-19deg); opacity: 1; }
+    64%  { transform: translate3d(104px, -92px, 0) scale(1) rotate(-23deg); opacity: 1; }
+    76%  { transform: translate3d(118px, -50px, 0) scale(1) rotate(-28deg); opacity: 1; }
+    88%  { transform: translate3d(132px, -6px, 0) scale(0.50) rotate(-34deg); opacity: 0.5; }
+    100% { transform: translate3d(140px, 20px, 0) scale(0) rotate(-40deg); opacity: 0; }
+  }
+  @keyframes throwArc4 {
+    0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 1; }
+    12%  { transform: translate3d(18px, -48px, 0) scale(1) rotate(4deg); opacity: 1; }
+    24%  { transform: translate3d(38px, -74px, 0) scale(1) rotate(8deg); opacity: 1; }
+    36%  { transform: translate3d(59px, -90px, 0) scale(1) rotate(12deg); opacity: 1; }
+    44%  { transform: translate3d(73px, -96px, 0) scale(1) rotate(15deg); opacity: 1; }
+    50%  { transform: translate3d(86px, -97px, 0) scale(1) rotate(17deg); opacity: 1; }
+    56%  { transform: translate3d(99px, -93px, 0) scale(1) rotate(19deg); opacity: 1; }
+    64%  { transform: translate3d(112px, -76px, 0) scale(1) rotate(22deg); opacity: 1; }
+    76%  { transform: translate3d(126px, -42px, 0) scale(1) rotate(25deg); opacity: 1; }
+    88%  { transform: translate3d(140px, 4px, 0) scale(0.52) rotate(30deg); opacity: 0.52; }
+    100% { transform: translate3d(150px, 22px, 0) scale(0) rotate(34deg); opacity: 0; }
+  }
+  @keyframes throwArc5 {
+    0%   { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); opacity: 1; }
+    12%  { transform: translate3d(20px, -44px, 0) scale(1) rotate(-3deg); opacity: 1; }
+    24%  { transform: translate3d(43px, -67px, 0) scale(1) rotate(-6deg); opacity: 1; }
+    36%  { transform: translate3d(67px, -82px, 0) scale(1) rotate(-9deg); opacity: 1; }
+    44%  { transform: translate3d(84px, -88px, 0) scale(1) rotate(-11deg); opacity: 1; }
+    50%  { transform: translate3d(99px, -89px, 0) scale(1) rotate(-13deg); opacity: 1; }
+    56%  { transform: translate3d(114px, -84px, 0) scale(1) rotate(-15deg); opacity: 1; }
+    64%  { transform: translate3d(128px, -68px, 0) scale(1) rotate(-17deg); opacity: 1; }
+    76%  { transform: translate3d(144px, -38px, 0) scale(1) rotate(-20deg); opacity: 1; }
+    88%  { transform: translate3d(160px, 5px, 0) scale(0.50) rotate(-23deg); opacity: 0.5; }
+    100% { transform: translate3d(170px, 16px, 0) scale(0) rotate(-26deg); opacity: 0; }
+  }
+
+  .play-btn {
+    display: block;
+    margin: 16px auto 0;
+    padding: 8px 28px;
+    background: #3a3a6a;
+    color: #eee;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .play-btn:hover { background: #5050a0; }
+  .info-row { display: flex; gap: 20px; justify-content: center; margin-top: 10px; font-size: 12px; color: #666; }
+</style>
+</head>
+<body>
+
+<h1>图标抛出动画曲线可视化（当前版本）</h1>
+<p class="subtitle">timing-function: linear，duration: 0.95s，关键帧与 index.html 同步</p>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#ff6b6b"></div>Arc1 星形 (空中消失)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ffd93d"></div>Arc2 三角 (空中消失)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#6bff6b"></div>Arc3 橙圆 (落回线下)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#6bb5ff"></div>Arc4 方块 (落回线下)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#c56bff"></div>Arc5 蓝圆 (落回线下)</div>
+</div>
+
+<div class="charts">
+  <div class="chart-box">
+    <div class="chart-title">XY 轨迹（抛物线路径）</div>
+    <canvas id="cvPath" width="480" height="280"></canvas>
+  </div>
+  <div class="chart-box">
+    <div class="chart-title">时间 → Y 位移</div>
+    <canvas id="cvY" width="480" height="220"></canvas>
+  </div>
+  <div class="chart-box">
+    <div class="chart-title">时间 → 缩放 (scale)</div>
+    <canvas id="cvScale" width="480" height="220"></canvas>
+  </div>
+  <div class="chart-box">
+    <div class="chart-title">时间 → 透明度 (opacity)</div>
+    <canvas id="cvOpacity" width="480" height="220"></canvas>
+  </div>
+</div>
+
+<div class="anim-area">
+  <div class="chart-title" style="justify-content:center">实时动画预览</div>
+  <div class="anim-stage" id="animStage">
+    <span class="anim-line-label">彩线 ─</span>
+    <div class="anim-line"></div>
+    <div class="anim-icon icon-1">⭐</div>
+    <div class="anim-icon icon-2">🔺</div>
+    <div class="anim-icon icon-3">🟠</div>
+    <div class="anim-icon icon-4">🟦</div>
+    <div class="anim-icon icon-5">🔵</div>
+  </div>
+  <button class="play-btn" id="playBtn">▶ 播放动画</button>
+  <div class="info-row">
+    <span>timing: linear</span>
+    <span>duration: 0.95s</span>
+    <span>fill-mode: forwards</span>
+  </div>
+</div>
+
+<script>
+const COLORS = ['#ff6b6b','#ffd93d','#6bff6b','#6bb5ff','#c56bff'];
+
+const arcs = [
+  { keys: [
+    {t:0, x:0, y:0, s:1, o:1},
+    {t:0.12, x:16, y:-52, s:1, o:1},
+    {t:0.24, x:34, y:-84, s:1, o:1},
+    {t:0.36, x:52, y:-101, s:1, o:1},
+    {t:0.44, x:64, y:-106, s:1, o:1},
+    {t:0.50, x:74, y:-107, s:1, o:1},
+    {t:0.56, x:84, y:-104, s:1, o:1},
+    {t:0.64, x:96, y:-90, s:1, o:1},
+    {t:0.76, x:114, y:-50, s:1, o:1},
+    {t:0.88, x:130, y:-10, s:0.55, o:0.55},
+    {t:1, x:140, y:8, s:0, o:0},
+  ]},
+  { keys: [
+    {t:0, x:0, y:0, s:1, o:1},
+    {t:0.12, x:15, y:-60, s:1, o:1},
+    {t:0.24, x:31, y:-98, s:1, o:1},
+    {t:0.36, x:47, y:-121, s:1, o:1},
+    {t:0.44, x:57, y:-127, s:1, o:1},
+    {t:0.50, x:67, y:-128, s:1, o:1},
+    {t:0.56, x:77, y:-124, s:1, o:1},
+    {t:0.64, x:88, y:-104, s:1, o:1},
+    {t:0.76, x:102, y:-58, s:1, o:1},
+    {t:0.88, x:115, y:-12, s:0.52, o:0.52},
+    {t:1, x:124, y:10, s:0, o:0},
+  ]},
+  { keys: [
+    {t:0, x:0, y:0, s:1, o:1},
+    {t:0.12, x:17, y:-56, s:1, o:1},
+    {t:0.24, x:36, y:-88, s:1, o:1},
+    {t:0.36, x:55, y:-107, s:1, o:1},
+    {t:0.44, x:68, y:-112, s:1, o:1},
+    {t:0.50, x:80, y:-113, s:1, o:1},
+    {t:0.56, x:92, y:-108, s:1, o:1},
+    {t:0.64, x:104, y:-92, s:1, o:1},
+    {t:0.76, x:118, y:-50, s:1, o:1},
+    {t:0.88, x:132, y:-6, s:0.50, o:0.50},
+    {t:1, x:140, y:20, s:0, o:0},
+  ]},
+  { keys: [
+    {t:0, x:0, y:0, s:1, o:1},
+    {t:0.12, x:18, y:-48, s:1, o:1},
+    {t:0.24, x:38, y:-74, s:1, o:1},
+    {t:0.36, x:59, y:-90, s:1, o:1},
+    {t:0.44, x:73, y:-96, s:1, o:1},
+    {t:0.50, x:86, y:-97, s:1, o:1},
+    {t:0.56, x:99, y:-93, s:1, o:1},
+    {t:0.64, x:112, y:-76, s:1, o:1},
+    {t:0.76, x:126, y:-42, s:1, o:1},
+    {t:0.88, x:140, y:4, s:0.52, o:0.52},
+    {t:1, x:150, y:22, s:0, o:0},
+  ]},
+  { keys: [
+    {t:0, x:0, y:0, s:1, o:1},
+    {t:0.12, x:20, y:-44, s:1, o:1},
+    {t:0.24, x:43, y:-67, s:1, o:1},
+    {t:0.36, x:67, y:-82, s:1, o:1},
+    {t:0.44, x:84, y:-88, s:1, o:1},
+    {t:0.50, x:99, y:-89, s:1, o:1},
+    {t:0.56, x:114, y:-84, s:1, o:1},
+    {t:0.64, x:128, y:-68, s:1, o:1},
+    {t:0.76, x:144, y:-38, s:1, o:1},
+    {t:0.88, x:160, y:5, s:0.50, o:0.50},
+    {t:1, x:170, y:16, s:0, o:0},
+  ]},
+];
+
+function easeLinear(t) { return t; }
+
+function catmullRom(p0, p1, p2, p3, t) {
+  var t2 = t * t, t3 = t2 * t;
+  return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2*p0 - 5*p1 + 4*p2 - p3) * t2 + (-p0 + 3*p1 - 3*p2 + p3) * t3);
+}
+
+function sampleArcSmooth(arc, steps) {
+  var keys = arc.keys;
+  var pts = [];
+  for (var i = 0; i <= steps; i++) {
+    var rawT = i / steps;
+    var t = easeLinear(rawT);
+    var seg = 0;
+    for (var k = 1; k < keys.length; k++) {
+      if (t <= keys[k].t) { seg = k - 1; break; }
+      if (k === keys.length - 1) seg = k - 1;
+    }
+    var k0 = keys[seg], k1 = keys[seg + 1];
+    var local = (t - k0.t) / (k1.t - k0.t);
+    var km1 = keys[Math.max(0, seg - 1)];
+    var k2 = keys[Math.min(keys.length - 1, seg + 2)];
+    pts.push({
+      rawT: rawT,
+      x: catmullRom(km1.x, k0.x, k1.x, k2.x, local),
+      y: catmullRom(km1.y, k0.y, k1.y, k2.y, local),
+      s: catmullRom(km1.s, k0.s, k1.s, k2.s, local),
+      o: catmullRom(km1.o, k0.o, k1.o, k2.o, local),
+    });
+  }
+  return pts;
+}
+
+function drawPath(canvas) {
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var pad = { l: 40, r: 20, t: 20, b: 40 };
+  var gW = W - pad.l - pad.r, gH = H - pad.t - pad.b;
+
+  ctx.fillStyle = '#16162a';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = '#333';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  var lineY = pad.t + gH * 0.55;
+  ctx.beginPath(); ctx.moveTo(pad.l, lineY); ctx.lineTo(W - pad.r, lineY); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#555'; ctx.font = '11px sans-serif';
+  ctx.fillText('彩线 Y=0', pad.l, lineY + 14);
+
+  ctx.fillStyle = '#444'; ctx.font = '11px sans-serif';
+  ctx.fillText('X →', W - pad.r - 20, H - 8);
+  ctx.save(); ctx.translate(12, pad.t + gH / 2); ctx.rotate(-Math.PI / 2);
+  ctx.fillText('↑ Y（向上为负）', -30, 0); ctx.restore();
+
+  var xRange = [0, 180], yRange = [-140, 40];
+  function mapX(v) { return pad.l + (v - xRange[0]) / (xRange[1] - xRange[0]) * gW; }
+  function mapY(v) { return pad.t + (v - yRange[0]) / (yRange[1] - yRange[0]) * gH; }
+
+  arcs.forEach(function (arc, i) {
+    var pts = sampleArcSmooth(arc, 200);
+    ctx.strokeStyle = COLORS[i];
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    pts.forEach(function (p, j) {
+      var px = mapX(p.x), py = mapY(p.y);
+      if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+
+    arc.keys.forEach(function (k) {
+      ctx.beginPath();
+      ctx.arc(mapX(k.x), mapY(k.y), 3, 0, Math.PI * 2);
+      ctx.fillStyle = COLORS[i];
+      ctx.globalAlpha = 0.5;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    });
+  });
+}
+
+function drawTimeSeries(canvas, prop, label, yDomain) {
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var pad = { l: 50, r: 20, t: 15, b: 30 };
+  var gW = W - pad.l - pad.r, gH = H - pad.t - pad.b;
+
+  ctx.fillStyle = '#16162a';
+  ctx.fillRect(0, 0, W, H);
+
+  ctx.strokeStyle = '#282840';
+  ctx.lineWidth = 1;
+  for (var i = 0; i <= 4; i++) {
+    var gy = pad.t + gH * i / 4;
+    ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(W - pad.r, gy); ctx.stroke();
+  }
+
+  ctx.fillStyle = '#555'; ctx.font = '11px sans-serif';
+  ctx.fillText('时间 t →', W - pad.r - 50, H - 6);
+  ctx.fillText(label, pad.l - 4, pad.t - 4);
+  for (var i = 0; i <= 4; i++) {
+    var v = yDomain[0] + (yDomain[1] - yDomain[0]) * (1 - i / 4);
+    ctx.fillText(v.toFixed(v % 1 === 0 ? 0 : 1), 4, pad.t + gH * i / 4 + 4);
+  }
+  for (var i = 0; i <= 5; i++) {
+    ctx.fillText((i * 0.2).toFixed(1), pad.l + gW * i / 5 - 8, H - 8);
+  }
+
+  if (prop === 'y') {
+    var zy = pad.t + (1 - (0 - yDomain[0]) / (yDomain[1] - yDomain[0])) * gH;
+    ctx.strokeStyle = '#555';
+    ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(pad.l, zy); ctx.lineTo(W - pad.r, zy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#666';
+    ctx.fillText('Y=0 彩线', pad.l + 4, zy - 4);
+  }
+
+  function mapX(t) { return pad.l + t * gW; }
+  function mapYv(v) { return pad.t + (1 - (v - yDomain[0]) / (yDomain[1] - yDomain[0])) * gH; }
+
+  arcs.forEach(function (arc, i) {
+    var pts = sampleArcSmooth(arc, 200);
+    ctx.strokeStyle = COLORS[i];
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    pts.forEach(function (p, j) {
+      var px = mapX(p.rawT), py = mapYv(p[prop]);
+      if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    });
+    ctx.stroke();
+  });
+}
+
+drawPath(document.getElementById('cvPath'));
+drawTimeSeries(document.getElementById('cvY'), 'y', 'Y 位移', [-140, 40]);
+drawTimeSeries(document.getElementById('cvScale'), 's', 'scale', [-0.1, 1.1]);
+drawTimeSeries(document.getElementById('cvOpacity'), 'o', 'opacity', [-0.1, 1.1]);
+
+document.getElementById('playBtn').addEventListener('click', function () {
+  var stage = document.getElementById('animStage');
+  stage.classList.remove('playing');
+  void stage.offsetWidth;
+  stage.classList.add('playing');
+});
+</script>
+</body>
+</html>
